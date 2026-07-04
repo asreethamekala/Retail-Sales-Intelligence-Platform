@@ -1,0 +1,17 @@
+# Windows
+Thumbs.db
+desktop.ini
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+# Power BI autosave
+*.pbix.autosave
