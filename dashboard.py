@@ -1,8 +1,8 @@
+import os
 import streamlit as st
 import pandas as pd
 import sqlalchemy
 import matplotlib.pyplot as plt
-
 
 # ==========================================
 # 1. PAGE CONFIGURATION
@@ -14,24 +14,32 @@ st.set_page_config(
     layout="wide"
 )
 
-
 # ==========================================
-# 2. MYSQL DATABASE CONNECTION
+# 2. MYSQL DATABASE CONFIGURATION
 # ==========================================
 
 DB_USER = "root"
-DB_PASSWORD = "3306"
+DB_PASSWORD = os.getenv("MYSQL_PASSWORD")
 DB_HOST = "localhost"
-DB_PORT = "3306"
+DB_PORT = 3306
 DB_NAME = "sales_analysis"
+
+if not DB_PASSWORD:
+    st.error(
+        "MYSQL_PASSWORD environment variable is not set."
+    )
+    st.stop()
+
+# ==========================================
+# 3. MYSQL CONNECTION
+# ==========================================
 
 engine = sqlalchemy.create_engine(
     f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 
-
 # ==========================================
-# 3. LOAD DATA
+# 4. LOAD DATA
 # ==========================================
 
 query = """
@@ -39,38 +47,46 @@ SELECT *
 FROM final_sample_superstore;
 """
 
-df = pd.read_sql(query, engine)
-
+try:
+    df = pd.read_sql(query, engine)
+except Exception as e:
+    st.error(f"Unable to load data from MySQL: {e}")
+    st.stop()
 
 # ==========================================
-# 4. DATA PREPARATION
+# 5. DATA PREPARATION
 # ==========================================
 
 df["Order_Date"] = pd.to_datetime(df["Order_Date"])
 
 df["Year"] = df["Order_Date"].dt.year
 
-df["Month"] = df["Order_Date"].dt.to_period("M").astype(str)
-
+df["Month"] = (
+    df["Order_Date"]
+    .dt.to_period("M")
+    .astype(str)
+)
 
 # ==========================================
-# 5. TITLE
+# 6. TITLE
 # ==========================================
 
 st.title("📊 Retail Sales Intelligence Dashboard")
 
 st.write(
-    "Interactive analysis of sales, profit, customers, products and regional performance."
+    "Interactive analysis of sales, profit, customers, "
+    "products and regional performance."
 )
 
-
 # ==========================================
-# 6. SIDEBAR FILTERS
+# 7. SIDEBAR FILTERS
 # ==========================================
 
 st.sidebar.header("Filters")
 
-years = sorted(df["Year"].dropna().unique())
+years = sorted(
+    df["Year"].dropna().unique()
+)
 
 selected_year = st.sidebar.multiselect(
     "Select Year",
@@ -78,7 +94,9 @@ selected_year = st.sidebar.multiselect(
     default=years
 )
 
-categories = sorted(df["Category"].dropna().unique())
+categories = sorted(
+    df["Category"].dropna().unique()
+)
 
 selected_category = st.sidebar.multiselect(
     "Select Category",
@@ -86,19 +104,18 @@ selected_category = st.sidebar.multiselect(
     default=categories
 )
 
-
 # ==========================================
-# 7. APPLY FILTERS
+# 8. APPLY FILTERS
 # ==========================================
 
 filtered_df = df[
-    (df["Year"].isin(selected_year)) &
+    (df["Year"].isin(selected_year))
+    &
     (df["Category"].isin(selected_category))
 ]
 
-
 # ==========================================
-# 8. KPI CALCULATIONS
+# 9. KPI CALCULATIONS
 # ==========================================
 
 total_sales = filtered_df["Sales"].sum()
@@ -113,9 +130,8 @@ total_quantity = filtered_df["Quantity"].sum()
 
 average_sales = filtered_df["Sales"].mean()
 
-
 # ==========================================
-# 9. DISPLAY KPIs
+# 10. DISPLAY KPIs
 # ==========================================
 
 col1, col2, col3, col4, col5, col6 = st.columns(6)
@@ -150,12 +166,10 @@ col6.metric(
     f"${average_sales:,.2f}"
 )
 
-
 st.divider()
 
-
 # ==========================================
-# 10. SALES BY CATEGORY
+# 11. SALES BY CATEGORY
 # ==========================================
 
 st.subheader("Sales by Category")
@@ -182,9 +196,8 @@ plt.xticks(rotation=0)
 
 st.pyplot(fig1)
 
-
 # ==========================================
-# 11. SALES BY REGION
+# 12. SALES BY REGION
 # ==========================================
 
 st.subheader("Sales by Region")
@@ -211,9 +224,8 @@ plt.xticks(rotation=45)
 
 st.pyplot(fig2)
 
-
 # ==========================================
-# 12. PROFIT BY CATEGORY
+# 13. PROFIT BY CATEGORY
 # ==========================================
 
 st.subheader("Profit by Category")
@@ -239,9 +251,8 @@ plt.xticks(rotation=0)
 
 st.pyplot(fig3)
 
-
 # ==========================================
-# 13. MONTHLY SALES TREND
+# 14. MONTHLY SALES TREND
 # ==========================================
 
 st.subheader("Monthly Sales Trend")
@@ -268,9 +279,8 @@ plt.xticks(rotation=45)
 
 st.pyplot(fig4)
 
-
 # ==========================================
-# 14. SALES BY SEGMENT
+# 15. SALES BY SEGMENT
 # ==========================================
 
 st.subheader("Sales by Customer Segment")
@@ -293,9 +303,8 @@ ax5.set_ylabel("")
 
 st.pyplot(fig5)
 
-
 # ==========================================
-# 15. TOP 10 CUSTOMERS
+# 16. TOP 10 CUSTOMERS
 # ==========================================
 
 st.subheader("Top 10 Customers by Sales")
@@ -313,9 +322,8 @@ st.dataframe(
     use_container_width=True
 )
 
-
 # ==========================================
-# 16. TOP 10 PRODUCTS
+# 17. TOP 10 PRODUCTS
 # ==========================================
 
 st.subheader("Top 10 Products by Sales")
@@ -333,9 +341,8 @@ st.dataframe(
     use_container_width=True
 )
 
-
 # ==========================================
-# 17. DATA SUMMARY
+# 18. FILTERED DATASET
 # ==========================================
 
 st.divider()
@@ -343,7 +350,8 @@ st.divider()
 st.subheader("Filtered Dataset")
 
 st.write(
-    f"Showing {len(filtered_df):,} records after applying the selected filters."
+    f"Showing {len(filtered_df):,} records "
+    "after applying the selected filters."
 )
 
 st.dataframe(
