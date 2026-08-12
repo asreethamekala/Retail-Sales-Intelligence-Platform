@@ -1,15 +1,30 @@
+import os
 import pymysql
+
+# MySQL configuration
+DB_HOST = "localhost"
+DB_USER = "root"
+DB_PORT = 3306
+DB_NAME = "sales_analysis"
+
+# Get password from environment variable
+DB_PASSWORD = os.getenv("MYSQL_PASSWORD")
+
+if not DB_PASSWORD:
+    raise ValueError(
+        "MYSQL_PASSWORD environment variable is not set."
+    )
 
 try:
     connection = pymysql.connect(
-        host="localhost",
-        user="root",
-        password="3306",
-        database="sales_analysis",
-        port=3306
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        port=DB_PORT
     )
 
-    print("Connected to MySQL successfully!\n")
+    print("Connected to MySQL successfully!")
 
     cursor = connection.cursor()
 
@@ -17,13 +32,13 @@ try:
 
     tables = cursor.fetchall()
 
-    print("Tables in the database:")
+    print("\nTables in the database:")
+
     for table in tables:
         print(table[0])
 
     cursor.close()
     connection.close()
 
-except Exception as e:
-    print("Connection failed!")
-    print(e)
+except pymysql.MySQLError as e:
+    print("MySQL connection error:", e)
