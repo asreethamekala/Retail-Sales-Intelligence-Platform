@@ -1,17 +1,33 @@
+import os
 import pymysql
 import pandas as pd
 
+# MySQL configuration
+DB_HOST = "localhost"
+DB_USER = "root"
+DB_PORT = 3306
+DB_NAME = "sales_analysis"
+
+# Get password from environment variable
+DB_PASSWORD = os.getenv("MYSQL_PASSWORD")
+
+if not DB_PASSWORD:
+    raise ValueError(
+        "MYSQL_PASSWORD environment variable is not set."
+    )
+
 # Connect to MySQL
 connection = pymysql.connect(
-    host="localhost",
-    user="root",
-    password="3306",
-    database="sales_analysis",
-    port=3306
+    host=DB_HOST,
+    user=DB_USER,
+    password=DB_PASSWORD,
+    database=DB_NAME,
+    port=DB_PORT
 )
 
 # Load data
 query = "SELECT * FROM final_sample_superstore"
+
 df = pd.read_sql(query, connection)
 
 print("=" * 60)
@@ -34,3 +50,5 @@ print("\nStatistical Summary:")
 print(df.describe())
 
 connection.close()
+
+print("\nAnalysis completed successfully!")
